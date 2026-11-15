@@ -1,0 +1,12 @@
+{
+  "name": "font-explorer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browse every typeface from your favourite foundries in one place.",
+  "scripts": {
+    "dev": "node dev-server.js",
+    "scan": "node scripts/try-scan.js"
+  },
+  "engines": { "node": ">=18" }
+}
