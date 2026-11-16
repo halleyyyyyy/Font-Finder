@@ -1,5 +1,5 @@
 // Quick test from the terminal:  npm run scan -- https://klim.co.nz
-import { scanFoundry } from '../lib/scraper.js';
+import { scanFoundry } from '../api/scan.js';
 const url = process.argv[2] || 'https://klim.co.nz';
 const data = await scanFoundry(url);
 console.log(`${data.foundry.name} — ${data.families.length} families`, data.stats);

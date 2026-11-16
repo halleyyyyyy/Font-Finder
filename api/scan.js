@@ -1,12 +1,12 @@
-// FONT EXPLORER ‚Äî foundry scanner (runs on Vercel at /api/scan?url=‚Ä¶)
+// FONT EXPLORER - foundry scanner (runs on Vercel at /api/scan?url=...)
 // ------------------------------------------------------------
 // Works like WhatFont / Font Ninja, but on the server:
 //   1. Load the foundry homepage (and its "all typefaces" page).
-//   2. Find links that look like specimen pages (/typefaces/x, /fonts/x ‚Ä¶).
+//   2. Find links that look like specimen pages (/typefaces/x, /fonts/x ...).
 //   3. Visit those pages, collect every stylesheet + font file they use.
 //   4. Read every @font-face rule, plus any loose .woff2/.woff/.otf/.ttf URLs.
 //   5. Group the styles into families and link each family to its specimen page.
-// No dependencies ‚Äî just fetch + regular expressions.
+// No dependencies - just fetch + regular expressions.
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
@@ -171,7 +171,7 @@ function parsePage(html, pageUrl) {
 
   for (const m of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) page.inlineCss.push(m[1]);
 
-  // loose font URLs anywhere (data attributes, JSON blobs, inline scripts‚Ä¶)
+  // loose font URLs anywhere (data attributes, JSON blobs, inline scripts...)
   const unescaped = html.replace(/\\u002F/gi, '/').replace(/\\\//g, '/');
   for (const m of unescaped.matchAll(LOOSE_FONT_URL)) {
     const u = abs(decodeEntities(m[0]), pageUrl);
@@ -271,7 +271,7 @@ function splitWords(s) {
 function stripHashes(name) {
   let s = name;
   s = s.replace(/_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, ''); // shopify uuid
-  // build hashes like "-d2720e99207f‚Ä¶" or Django's "_L6hxfEU"
+  // build hashes like "-d2720e99207f..." or Django's "_L6hxfEU"
   for (let i = 0; i < 2; i++) {
     s = s.replace(/[-_.~]([A-Za-z0-9]{6,})$/, (m, seg) => {
       const hasDigit = /\d/.test(seg);
@@ -288,7 +288,7 @@ function stripHashes(name) {
 function analyseName(raw) {
   const words = splitWords(stripHashes(raw)).filter((w, i) => i === 0 || !/^(LCGV|LCG|LC)$/.test(w));
   const styleWords = [];
-  // "Cardinal Classic Web Regular Display" ‚Üí cut at the first clear style word after the name
+  // "Cardinal Classic Web Regular Display" -> cut at the first clear style word after the name
   const cut = words.findIndex((w, i) => i > 0 && HARD_STYLE.has(w.toLowerCase()));
   if (cut > 0) styleWords.push(...words.splice(cut));
   while (words.length > 1 && STYLE_WORDS.has(words[words.length - 1].toLowerCase())) styleWords.unshift(words.pop());
@@ -315,11 +315,11 @@ function weightFromWords(words) {
 const WEIGHT_LABEL = { 100: 'Thin', 200: 'Extralight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'Extrabold', 900: 'Black' };
 
 function keyOf(family) {
-  return family.normalize('NFD').replace(/[ÃÄ-ÕØ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return family.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function slugOf(family) {
-  return family.normalize('NFD').replace(/[ÃÄ-ÕØ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return family.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 function looksObfuscated(name) {
@@ -334,7 +334,7 @@ function describeFace(face) {
   // File names are usually the most honest ("GT-Alpina-Thin.woff2"); CSS names are often abbreviated ("Alp-Thin").
   const useDeclared = declaredOk && !fileOk;
   let family = fileOk ? fromFile.family : declaredOk ? declared.family : fromFile.family;
-  // "founders grotesk" ‚Üí "Founders Grotesk", "CALIBRE" ‚Üí "Calibre" (keep short prefixes like "GT", "ABC")
+  // "founders grotesk" -> "Founders Grotesk", "CALIBRE" -> "Calibre" (keep short prefixes like "GT", "ABC")
   family = family
     .split(' ')
     .map((w) => (w === w.toLowerCase() || (w === w.toUpperCase() && w.length > 4) ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w))
@@ -461,7 +461,7 @@ export async function scanFoundry(input) {
   }, timeLeft);
   for (const p of specimenPages) if (p) pages.push(p);
 
-  // stylesheets (deduped across all pages) ‚Üí @font-face
+  // stylesheets (deduped across all pages) -> @font-face
   const cssToPages = new Map();
   for (const p of pages) for (const c of p.cssUrls) {
     if (!cssToPages.has(c)) cssToPages.set(c, new Set());
@@ -557,13 +557,13 @@ export async function scanFoundry(input) {
 }
 
 function cleanSiteName(s) {
-  let name = s.replace(/^(welcome to|home)\s*[:\-‚Äì‚Äî|]?\s*/i, '').split(/\s+[|‚Äì‚Äî¬∑‚Ä¢]\s+|\s+-\s+/)[0].trim();
+  let name = s.replace(/^(welcome to|home)\s*[:\-\u2013\u2014|]?\s*/i, '').split(/\s+[|\u2013\u2014\u00b7\u2022]\s+|\s+-\s+/)[0].trim();
   if (name.length > 40) name = name.slice(0, 40);
   return name || s;
 }
 
 // ------------------------------------------------------------
-// GET /api/scan?url=https://abcdinamo.com  ‚Üí  every typeface found on that foundry site
+// GET /api/scan?url=https://abcdinamo.com  ->  every typeface found on that foundry site
 
 export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost').searchParams.get('url');

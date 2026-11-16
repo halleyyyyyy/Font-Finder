@@ -5,7 +5,7 @@ A little foundry of foundries. Add type foundry websites and see every typeface 
 ## How it works
 
 - **`index.html`, `styles.css`, `app.js`**: the website you see. Your foundry list is saved in your browser (localStorage).
-- **`api/scan.js`**: when you add a foundry, this runs on Vercel's servers. It opens the foundry's homepage and typeface pages, reads their stylesheets, and finds every `@font-face` rule and font file, like WhatFont or Font Ninja do. The scraper itself lives in `lib/scraper.js`.
+- **`api/scan.js`**: when you add a foundry, this runs on Vercel's servers. It opens the foundry's homepage and typeface pages, reads their stylesheets, and finds every `@font-face` rule and font file, like WhatFont or Font Ninja do.
 - **`api/font.js`**: browsers block fonts loaded from other websites, so this fetches a font file and passes it to the page. It's used only for previews.
 
 ## Run it on your computer
@@ -27,7 +27,7 @@ npm run scan -- https://klim.co.nz
 ## Put it on Vercel
 
 1. Create a new repository on [github.com/new](https://github.com/new), named something like `font-explorer`.
-2. On the new repository page, click **uploading an existing file** and drag in every file and folder from this project.
+2. On the new repository page, click **uploading an existing file** and drag in the files. GitHub can drop folders on upload: if `api/scan.js` and `api/font.js` end up outside an `api` folder, use **Add file → Create new file**, type `api/scan.js` as the name (the slash makes the folder) and paste the file in.
 3. Go to [vercel.com/new](https://vercel.com/new), sign in with GitHub, and **Import** the repository.
 4. Keep the defaults (Framework preset: **Other**, no build command) and click **Deploy**.
 
