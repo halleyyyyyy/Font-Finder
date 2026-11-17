@@ -13,6 +13,7 @@ const UA =
 
 const MAX_SPECIMEN_PAGES = 60;
 const MAX_STYLESHEETS = 60;
+const MAX_SCRIPTS = 20;
 const CONCURRENCY = 5;
 const TOTAL_BUDGET_MS = 42_000;
 
@@ -153,7 +154,7 @@ const LOOSE_FONT_URL =
   /(?:https?:)?\/\/[^"'\s()<>\\]+?\.(?:woff2|woff|otf|ttf)(?:\?[^"'\s()<>\\]*)?|(?<=["'(=\s])\/[^"'\s()<>\\]+?\.(?:woff2|woff|otf|ttf)(?:\?[^"'\s()<>\\]*)?/gi;
 
 function parsePage(html, pageUrl) {
-  const page = { url: pageUrl, links: [], cssUrls: [], inlineCss: [], fontUrls: [], title: null, siteName: null, icon: null };
+  const page = { url: pageUrl, links: [], cssUrls: [], scriptUrls: [], inlineCss: [], fontUrls: [], title: null, siteName: null, icon: null };
 
   // stylesheets & preloaded fonts
   for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
@@ -176,6 +177,16 @@ function parsePage(html, pageUrl) {
   for (const m of unescaped.matchAll(LOOSE_FONT_URL)) {
     const u = abs(decodeEntities(m[0]), pageUrl);
     if (u && !isBlocked(u)) page.fontUrls.push(u);
+  }
+
+  // scripts from the same site: single-page apps often hide font URLs inside them
+  for (const m of html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) {
+    const u = abs(decodeEntities(m[1]), pageUrl);
+    if (!u || isBlocked(u)) continue;
+    try {
+      const h = new URL(u).hostname;
+      if (baseDomain(h) === baseDomain(new URL(pageUrl).hostname) || /framerusercontent|website-files|webflow|squarespace|cargo|shopify|vercel|netlify|cloudfront/.test(h)) page.scriptUrls.push(u);
+    } catch {}
   }
 
   for (const m of html.matchAll(/<a\b[^>]*>/gi)) {
@@ -333,7 +344,8 @@ function describeFace(face) {
   const declaredOk = declared && declared.family && !looksObfuscated(declared.family);
   // File names are usually the most honest ("GT-Alpina-Thin.woff2"); CSS names are often abbreviated ("Alp-Thin").
   const useDeclared = declaredOk && !fileOk;
-  let family = fileOk ? fromFile.family : declaredOk ? declared.family : fromFile.family;
+  if (!fileOk && !declaredOk) return { family: null };
+  let family = fileOk ? fromFile.family : declared.family;
   // "founders grotesk" -> "Founders Grotesk", "CALIBRE" -> "Calibre" (keep short prefixes like "GT", "ABC")
   family = family
     .split(' ')
@@ -482,6 +494,18 @@ export async function scanFoundry(input) {
   await pool([...new Set(imported)].slice(0, 10), CONCURRENCY, async (cssUrl) => {
     const r = await fetchText(cssUrl, { referer: origin + '/' });
     for (const f of parseFontFaces(r.text, r.finalUrl)) rawFaces.push({ ...f, page: null });
+  }, timeLeft);
+
+  // font URLs and @font-face rules hidden inside JavaScript bundles
+  const scriptList = [...new Set(pages.slice(0, 4).flatMap((p) => p.scriptUrls))].slice(0, MAX_SCRIPTS);
+  await pool(scriptList, CONCURRENCY, async (jsUrl) => {
+    const r = await fetchText(jsUrl, { referer: origin + '/', maxBytes: 6_000_000 });
+    const text = r.text.replace(/\\u002F/gi, '/').replace(/\\\//g, '/').replace(/\\"/g, '"');
+    for (const f of parseFontFaces(text, origin + '/')) rawFaces.push({ ...f, page: null });
+    for (const m of text.matchAll(LOOSE_FONT_URL)) {
+      const u = abs(m[0], origin + '/');
+      if (u && !isBlocked(u)) pages[0].fontUrls.push(u);
+    }
   }, timeLeft);
 
   // loose font files without an @font-face rule

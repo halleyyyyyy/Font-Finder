@@ -3,7 +3,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -15,7 +15,8 @@ http
     try {
       if (path.startsWith('/api/')) {
         const name = path.slice(5).replace(/[^a-z0-9-]/gi, '');
-        const mod = await import(join(root, 'api', name + '.js'));
+        // re-import on every request so edits show up without restarting
+        const mod = await import(pathToFileURL(join(root, 'api', name + '.js')).href + '?t=' + Date.now());
         return await mod.default(req, res);
       }
       const file = normalize(join(root, path === '/' ? 'index.html' : path));

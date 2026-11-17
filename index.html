@@ -3,122 +3,111 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Font Explorer</title>
-  <meta name="description" content="A little foundry of foundries. Add type foundry websites and browse every typeface in one place." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23111'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='36' text-anchor='middle' fill='%23fff'%3EAa%3C/text%3E%3C/svg%3E" />
+  <title>Font Finder</title>
+  <meta name="description" content="A personal foundry of foundries. Every typeface from your favourite type foundries, in one place." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23000'/%3E%3Ctext x='32' y='45' font-family='Helvetica,Arial,sans-serif' font-size='34' text-anchor='middle' fill='%23fff'%3EFF%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div class="ticker" aria-hidden="true"><div class="ticker__track" id="ticker"></div></div>
-
-  <header class="masthead">
-    <div class="masthead__meta">
-      <span>(Est. 2026)</span>
-      <span>A little foundry of foundries</span>
-      <span id="countLine">0 typefaces · 0 foundries</span>
-      <button class="pill pill--ghost" id="themeToggle" type="button" aria-label="Invert colours">◐ Invert</button>
+  <!-- 1. Hero: a random typeface in a random duotone -->
+  <header class="top">
+    <div class="hero-wrap">
+      <a class="hero" id="hero" target="_blank" rel="noopener" aria-label="Open this typeface's specimen">
+        <div class="hero__marquee" aria-hidden="true"><div class="hero__track" id="heroTrack"></div></div>
+        <div class="hero__card">
+          <span class="hero__name" id="heroName">Loading…</span>
+          <span class="hero__foundry mono"><span id="heroFoundry">Finding a typeface</span> <span class="arrow" aria-hidden="true"></span></span>
+        </div>
+      </a>
+      <!-- outside the link, since a button can't sit inside an <a> -->
+      <button class="hero__refresh mono" id="heroRefresh" type="button" aria-label="Show another typeface">New font <span class="hero__refresh-icon" aria-hidden="true">↻</span></button>
     </div>
-    <h1 class="wordmark" id="wordmark">Font Explorer</h1>
+    <h1 class="wordmark" id="wordmark">Font Finder</h1>
   </header>
 
-  <section class="foundries" aria-labelledby="foundriesTitle">
-    <div class="foundries__head">
-      <h2 id="foundriesTitle" class="label">01 — Foundries</h2>
+  <!-- 2. Nav: sticks to the top once you scroll -->
+  <nav class="nav mono" id="nav" aria-label="Font Finder">
+    <div class="nav__bar">
+      <button class="nav__btn" type="button" data-panel="filters" aria-expanded="false">Filter &amp; Sort <span class="pm">+</span></button>
+      <button class="nav__btn nav__browse" type="button" id="browseBtn">Browse fonts <span>↓</span></button>
+      <input class="nav__tester" id="tester" type="text" placeholder="Type here to test fonts..." aria-label="Type here to test fonts" />
+      <button class="nav__btn" type="button" data-panel="add" aria-expanded="false">Add a foundry <span class="pm">+</span></button>
+    </div>
+
+    <div class="panel" id="panel-filters" hidden>
+      <div class="filters">
+        <fieldset><legend>Foundries</legend><div id="fFoundries"></div></fieldset>
+        <fieldset><legend>Font type</legend><div id="fTypes"></div></fieldset>
+        <fieldset><legend>Sort</legend><div id="fSort"></div><legend class="sub">Saves</legend><div id="fSaved"></div></fieldset>
+        <fieldset><legend>View</legend><div id="fView"></div><legend class="sub">Size</legend><div id="fSize"></div><legend class="sub">Previews</legend><div id="fBlocked"></div></fieldset>
+      </div>
+      <div class="panel__actions">
+        <button type="button" id="applyFilters">Apply</button>
+        <button type="button" id="clearFilters">Clear filters</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-add" hidden>
       <form class="add" id="addForm" autocomplete="off">
-        <input class="add__input" id="addInput" type="text" inputmode="url" placeholder="Paste a foundry website, e.g. klim.co.nz" aria-label="Foundry website" />
-        <button class="pill pill--solid" type="submit">Add foundry +</button>
+        <input id="addInput" type="text" inputmode="url" placeholder="Paste a foundry website..." aria-label="Foundry website" />
+        <button type="submit">Add</button>
       </form>
+      <ul class="foundry-list" id="foundryList"></ul>
     </div>
-    <ul class="chips" id="foundryList"></ul>
-    <div class="suggest" id="suggest">
-      <span class="label">Try</span>
-    </div>
-  </section>
+  </nav>
 
-  <section class="toolbar" id="toolbar" aria-label="Type tester">
-    <div class="toolbar__row">
-      <label class="tester">
-        <span class="label">02 — Type tester</span>
-        <input id="testerInput" type="text" placeholder="Type anything… (empty shows the font name)" />
-      </label>
-      <label class="slider">
-        <span class="label">Size <b id="sizeOut">64</b>px</span>
-        <input id="sizeInput" type="range" min="16" max="200" value="64" />
-      </label>
-    </div>
-    <div class="toolbar__row toolbar__row--filters">
-      <input id="searchInput" class="search" type="search" placeholder="Search families…" aria-label="Search families" />
-      <select id="foundryFilter" aria-label="Filter by foundry"><option value="">All foundries</option></select>
-      <select id="sortSelect" aria-label="Sort">
-        <option value="az">A → Z</option>
-        <option value="foundry">By foundry</option>
-        <option value="styles">Most styles</option>
-        <option value="shuffle">Shuffle</option>
-      </select>
-      <div class="seg" role="group" aria-label="Filters">
-        <button type="button" class="pill" data-toggle="variable">Variable</button>
-        <button type="button" class="pill" data-toggle="italic">Has italic</button>
-      </div>
-      <div class="seg" role="group" aria-label="Layout">
-        <button type="button" class="pill is-on" data-view="grid">Grid</button>
-        <button type="button" class="pill" data-view="list">List</button>
-      </div>
-    </div>
-  </section>
-
-  <main>
-    <p class="results-line label" id="resultsLine"></p>
-    <div class="grid" id="grid"></div>
-    <div class="empty" id="empty" hidden>
-      <p class="empty__big">Nothing here yet.</p>
-      <p>Add a foundry above. Font Explorer visits its website, finds every typeface it uses, and sets each name in its own font.</p>
-    </div>
+  <!-- 3. Every typeface -->
+  <main id="fonts">
+    <p class="status mono" id="status"></p>
+    <div class="list" id="list"></div>
   </main>
 
-  <footer class="footer">
-    <div class="footer__big">Font Explorer</div>
-    <p>Previews use each foundry's own web fonts, loaded only so you can browse. To use a typeface in a project, buy a license from the foundry.</p>
+  <footer class="foot mono">
+    <span>Font Finder</span>
+    <span id="footCount"></span>
+    <span>Previews use each foundry's own web fonts. License fonts from the foundry.</span>
   </footer>
 
+  <!-- Fixed in the lower left once you've saved something -->
+  <button class="saves-btn mono" id="savesBtn" type="button" aria-pressed="false" hidden></button>
+
+  <!-- See styles overlay -->
   <dialog class="sheet" id="sheet">
-    <div class="sheet__inner">
-      <header class="sheet__head">
-        <div>
-          <p class="label" id="sheetFoundry"></p>
-          <h2 class="sheet__title" id="sheetTitle"></h2>
-          <p class="sheet__meta" id="sheetMeta"></p>
-        </div>
-        <div class="sheet__actions">
-          <a class="pill pill--solid" id="sheetSpecimen" target="_blank" rel="noopener">Open specimen ↗</a>
-          <button class="pill" id="sheetClose" type="button" aria-label="Close">Close ✕</button>
-        </div>
-      </header>
-      <div class="sheet__tester">
-        <input id="sheetText" type="text" value="The quick brown fox jumps over the lazy dog" aria-label="Tester text" />
-        <label class="slider"><span class="label">Size <b id="sheetSizeOut">48</b>px</span><input id="sheetSize" type="range" min="12" max="160" value="48" /></label>
-        <label class="slider" id="sheetWeightWrap" hidden><span class="label">Weight <b id="sheetWeightOut">400</b></span><input id="sheetWeight" type="range" min="100" max="900" value="400" /></label>
-      </div>
-      <ol class="waterfall" id="sheetStyles"></ol>
+    <div class="sheet__bar mono">
+      <a id="sheetFoundry" target="_blank" rel="noopener"></a>
+      <input class="nav__tester" id="sheetTester" type="text" placeholder="Type here to test fonts..." aria-label="Type here to test this family" />
+      <button type="button" id="sheetClose">Close <span class="pm">−</span></button>
     </div>
+    <div class="sheet__head">
+      <h2 class="sheet__title" id="sheetTitle"></h2>
+      <div class="sheet__meta mono">
+        <span id="sheetMeta"></span>
+        <label class="sheet__weight" id="sheetWeightWrap" hidden>Weight <output id="sheetWeightOut">400</output><input id="sheetWeight" type="range" min="100" max="900" value="400" /></label>
+        <span class="sheet__actions">
+          <button class="pill" id="sheetSave" type="button" aria-pressed="false">Save for later</button>
+          <a class="pill" id="sheetSpecimen" target="_blank" rel="noopener">Specimen <span class="arrow" aria-hidden="true"></span></a>
+        </span>
+      </div>
+    </div>
+    <ol class="sheet__styles" id="sheetStyles"></ol>
   </dialog>
 
   <template id="cardTpl">
     <article class="card">
-      <a class="card__link" target="_blank" rel="noopener">
-        <div class="card__top">
-          <span class="card__foundry"></span>
-          <span class="card__count"></span>
-        </div>
-        <div class="card__sample"></div>
-        <div class="card__bottom">
-          <span class="card__name"></span>
-          <span class="card__tags"></span>
-        </div>
-      </a>
-      <button class="card__styles pill" type="button">Styles</button>
+      <a class="card__cover" target="_blank" rel="noopener"></a>
+      <div class="card__meta mono">
+        <a class="card__foundry" target="_blank" rel="noopener"></a>
+        <span class="muted card__count"></span>
+        <span class="card__tags muted"></span>
+      </div>
+      <div class="card__sample"></div>
+      <div class="card__actions mono">
+        <button class="pill card__save" type="button" aria-pressed="false">Save for later</button>
+        <button class="pill card__styles" type="button">See styles</button>
+      </div>
     </article>
   </template>
 

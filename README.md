@@ -1,10 +1,11 @@
-# FONT EXPLORER
+# FONT FINDER
 
-A little foundry of foundries. Add type foundry websites and see every typeface they sell in one grid, with each name set in its own font, a type tester and links to each specimen page.
+A personal foundry of foundries. Add foundries one at a time: paste a website, or tick one from the list in **Add a foundry** (that list comes from an Are.na board; set `ARENA_CHANNEL` at the top of `app.js`). Only the foundries you add are loaded, and any that can't be read are removed. See every typeface they sell in one grid, with each name set in its own font, a type tester and links to each specimen page.
 
 ## How it works
 
 - **`index.html`, `styles.css`, `app.js`**: the website you see. Your foundry list is saved in your browser (localStorage).
+- **`api/arena.js`**: reads the Are.na board and returns the foundry websites on it.
 - **`api/scan.js`**: when you add a foundry, this runs on Vercel's servers. It opens the foundry's homepage and typeface pages, reads their stylesheets, and finds every `@font-face` rule and font file, like WhatFont or Font Ninja do.
 - **`api/font.js`**: browsers block fonts loaded from other websites, so this fetches a font file and passes it to the page. It's used only for previews.
 
